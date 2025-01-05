@@ -1,0 +1,164 @@
+﻿@page "/transaction"
+@using ExpenseTracker.Models
+@inject TransactionService TransactionService
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JSRuntime
+
+<section class="">
+    <div class="d-flex justify-content-center align-items-center" style="min-height: 75vh;">
+        <div class="card shadow-sm border-0 p-3 mt-5" style="width: 350px; border-radius: 12px;  background-color: #fef9f9;">
+            <div class="mb-3">
+                <div class="rounded-circle bg-light mx-auto" style="width: 50px; height: 50px;">
+                    <img src="logo.png" alt="Logo" class="rounded-circle" style="width: 50px; height: 50px; object-fit: cover;" />
+                </div>
+            </div>
+            <h2 class="text-center mb-3" style="color: #5f2eea; font-size: 1.5rem;">Transaction</h2>
+
+            <form @onsubmit="OnSaveTransaction">
+                <div class="mb-2">
+                    <input type="text" class="form-control" placeholder="Transaction Title" style="font-weight: 300; padding: 6px;" @bind="TransactionTitle" required>
+                </div>
+                <div class="mb-2">
+                    <input type="number" class="form-control" placeholder="Amount" style="font-weight: 300; padding: 6px;" @bind="TransactionAmount" required min="1" step="any">
+                </div>
+                <div class="mb-2">
+                    <select class="form-select" @bind="TransactionType" required>
+                        <option disabled value="">Select Transaction Type</option>
+                        <option value="Credit">Credit (Inflow)</option>
+                        <option value="Debit">Debit (Outflow)</option>
+                    </select>
+                </div>
+                <div class="mb-2">
+                    <select class="form-select" @bind="TransactionSource">
+                        <option disabled value="">Select Source</option>
+                        <option value="bank">Bank</option>
+                        <option value="cash">Cash</option>
+                        <option value="online">Online</option>
+                        <option value="cheque">Cheque</option>
+                        <option value="loan">Loan</option>
+                        <option value="gift">Gift</option>
+                        <option value="bonus">Bonus</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+                <div class="mb-2">
+                    <select class="form-select" @bind="TransactionTags" required>
+                        <option disabled value="">Select Tags</option>
+                        <option value="yearly">Yearly</option>
+                        <option value="monthly">Monthly</option>
+                        <option value="food">Food</option>
+                        <option value="drinks">Drinks</option>
+                        <option value="clothes">Clothes</option>
+                        <option value="gadgets">Gadgets</option>
+                        <option value="miscellaneous">Miscellaneous</option>
+                        <option value="fuel">Fuel</option>
+                        <option value="rent">Rent</option>
+                        <option value="emi">EMI</option>
+                        <option value="party">Party</option>
+                        <option value="salary">Salary</option>
+                        <option value="groceries">Groceries</option>
+                        <option value="other">Other</option>
+                    </select>
+                    <small class="">Select or type tags (comma separated)</small>
+
+                </div>
+                @if (TransactionTags == "other")
+                {
+                    <div class="mb-2">
+                        <input type="text" class="form-control" placeholder="Add Custom Tags (comma separated)" style="font-weight: 300; padding: 6px;" @bind="CustomTags" />
+                    </div>
+                }
+                <div class="mb-2">
+                    <textarea class="form-control" rows="2" placeholder="Notes" style="font-weight: 300; padding: 6px;" @bind="TransactionNotes"></textarea>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <button type="submit" class="btn w-45" style="background-color: #5f2eea; color: white; padding: 6px;">Save</button>
+                    <button type="button" class="btn w-45" style="background-color: #c0392b; color: white; padding: 6px;" @onclick="OnCancel">Cancel</button>
+                </div>
+            </form>
+
+            @if (!string.IsNullOrEmpty(Message))
+            {
+                <p class="text-center text-muted" style="margin-top: 10px;">@Message</p>
+            }
+        </div>
+    </div>
+</section>
+
+
+@code {
+    private string TransactionTitle = "";
+    private decimal TransactionAmount = 0;
+    private string TransactionType = "Credit";
+    private string TransactionTags = "";
+    private string CustomTags = ""; // Custom tags entered by the user
+    private string TransactionSource = "";
+    private string TransactionNotes = "";
+    private string Message = "";
+    private List<TransactionModel> Transactions = new();
+
+    protected override void OnInitialized()
+    {
+        // Load transactions from service
+        var appData = TransactionService.LoadAppData();
+        Transactions = appData.Transactions;
+    }
+
+    private async Task OnSaveTransaction()
+    {
+        // Retrieve the userId from localStorage
+        var userId = await JSRuntime.InvokeAsync<string>("localStorage.getItem", "userId");
+        if (string.IsNullOrEmpty(userId))
+        {
+            Message = "User ID not found. Please log in.";
+            return;
+        }
+
+        // Convert the userId to integer
+        int parsedUserId = int.Parse(userId);
+
+        // Check if the user has sufficient balance for the transaction
+        if (TransactionType == "Debit" && !TransactionService.CheckSufficientBalance(parsedUserId, TransactionAmount))
+        {
+            Message = "Insufficient balance for this transaction.";
+            return;
+        }
+
+        // Combine predefined tags with custom tags
+        var allTags = TransactionTags.Split(',').ToList(); // Predefined tags
+        if (!string.IsNullOrEmpty(CustomTags))
+        {
+            allTags.AddRange(CustomTags.Split(',').Select(tag => tag.Trim()));
+        }
+
+        // Generate a unique TransactionId based on existing transactions
+        var newTransactionId = Transactions.Any() ? Transactions.Max(t => t.Id) + 1 : 1;
+
+        // Save the transaction
+        var newTransaction = new TransactionModel
+            {
+                Id = newTransactionId,  // Assign the unique TransactionId
+                UserId = parsedUserId,
+                Title = TransactionTitle,
+                Amount = TransactionAmount,
+                Type = Enum.TryParse<TransactionModel.TransactionType>(TransactionType, out var type) ? type : TransactionModel.TransactionType.Credit,
+                Tags = allTags.Distinct().ToList(), // Combine both, remove duplicates
+                Source = TransactionSource.Split(',').ToList(),
+                Notes = TransactionNotes,
+                Date = DateTime.Now
+            };
+
+        // Add the transaction to the list
+        Transactions.Add(newTransaction);
+
+        // Save the updated transaction list
+        TransactionService.SaveTransactions(Transactions);
+
+        Message = "Transaction saved successfully!";
+    }
+
+    private void OnCancel()
+    {
+        NavigationManager.NavigateTo("/home");
+    }
+}

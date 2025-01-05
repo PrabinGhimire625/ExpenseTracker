@@ -1,0 +1,361 @@
+﻿@page "/dashboard"
+@using ExpenseTracker.Models
+@inject NavigationManager NavigationManager
+@inject TransactionService TransactionService
+@inject DebtService DebtService
+@inject IJSRuntime JSRuntime
+
+<div class="main-content container py-4" style="color: white;">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1 style="font-weight: bold; ">Dashboard</h1>
+        <div class="d-flex align-items-center">
+            <div id="currentDate" class="text-white"></div>
+            <a href="/login"><button class="btn btn-success ms-3">Logout</button></a>
+        </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="row g-3">
+        <div class="col-md-3">
+            <div class="card text-center bg-dark text-white shadow-sm">
+                <div class="card-body">
+                    <h6>Total Net Worth</h6>
+                    <p class="display-6 text-danger">@TotalNetWorth</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center bg-dark text-white shadow-sm">
+                <div class="card-body">
+                    <h6>Total Income</h6>
+                    <p class="display-6 text-success">@TotalIncome</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center bg-dark text-white shadow-sm">
+                <div class="card-body">
+                    <h6>Total Expenses</h6>
+                    <p class="display-6 text-warning">@TotalExpenses</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center bg-dark text-white shadow-sm">
+                <div class="card-body p-3">
+                    <h5 class="card-title text-danger">Transaction overview</h5>
+                    <p class="card-text">
+                        <strong>No of transaction:</strong> @TotalTransactions
+                    </p>
+                    <p class="">
+                        <strong>Total-transaction:</strong> @TotalTransactionsCalculated
+                    </p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center bg-dark text-white shadow-sm">
+                <div class="card-body p-4">
+                    <h5 class="card-title text-warning">Inflow/Outflow Overview</h5>
+                    <p class="card-text">
+                        <strong>Highest Inflow:</strong> @HighestInflow?.Amount
+                    </p>
+                    <p class="card-text">
+                        <strong>Lowest Inflow:</strong> @LowestInflow?.Amount
+                    </p>
+                    <p class="card-text">
+                        <strong>Highest Outflow:</strong> @HighestOutflow?.Amount
+                    </p>
+                    <p class="card-text">
+                        <strong>Lowest Outflow:</strong> @LowestOutflow?.Amount
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3 mb-2">
+            <div class="card text-center bg-dark text-white shadow-sm">
+                <div class="card-body p-4">
+                    <h5 class="card-title text-success">Debts Overview</h5>
+                    <p class="card-text">
+                        <strong>Total Debts:</strong> @TotalDebt
+                    </p>
+                    <p class="card-text">
+                        <strong>Cleared Debts:</strong> @ClearedDebt
+                    </p>
+                    <p class="card-text">
+                        <strong>Remaining Debts:</strong> @RemainingDebt
+                    </p>
+                    <p class="card-text">
+                        <strong>Highest Debts:</strong> @HighestDebt?.Amount
+                    </p>
+                    <p class="card-text">
+                        <strong>Lowest Debts:</strong> @LowestOutflow?.Amount
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pending Debts Section -->
+    <div class=" p-2 mb-3" style="background-color: black;">
+        <h3 class="text-white font-weight-bold" style="font-size: 2rem;">Pending Debts</h3>
+        <table class="table table-dark table-hover">
+            <thead>
+                <tr>
+                    <th>Source</th>
+                    <th>Type</th>
+                    <th>Total Amount</th>
+                    <th>Remaining Amount</th>
+                    <th>Due Date</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (PendingDebts != null && PendingDebts.Any())
+                {
+                    @foreach (var debt in PendingDebts)
+                    {
+                        <tr>
+                            <td>@debt.Source</td>
+                            <td>@debt.Type</td>
+                            <td>@debt.Amount</td>
+                            <td>@debt.RemainigAmount</td>
+                            <td>@debt.DueDate</td>
+                        </tr>
+                    }
+                }
+                else
+                {
+                    <tr>
+                        <td colspan="5" class="text-center">No pending debts available.</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Transactions Section -->
+    <div class="row p-2 mb-3" style="background-color: black;">
+        <!-- Highest Transactions Section (Left) -->
+        <div class="col-md-6">
+            <h3 class="text-white font-weight-bold" style="font-size: 2rem;">Top 5 Highest Transactions</h3>
+            <table class="table table-dark table-hover">
+                <thead>
+                    <tr>
+                        <th>Title</th>
+                        <th>Amount</th>
+                        <th>Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Top5HighestTransactions != null && Top5HighestTransactions.Any())
+                    {
+                        @foreach (var transaction in Top5HighestTransactions)
+                        {
+                            <tr>
+                                <td>@transaction.Title</td>
+                                <td>@transaction.Amount</td>
+                                <td>@transaction.Date.ToShortDateString()</td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="3" class="text-center">No transactions available.</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Lowest Transactions Section (Right) -->
+        <div class="col-md-6">
+            <h3 class="text-white font-weight-bold" style="font-size: 2rem;">Top 5 Lowest Transactions</h3>
+            <table class="table table-dark table-hover">
+                <thead>
+                    <tr>
+                        <th>Title</th>
+                        <th>Amount</th>
+                        <th>Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Top5LowestTransactions != null && Top5LowestTransactions.Any())
+                    {
+                        @foreach (var transaction in Top5LowestTransactions)
+                        {
+                            <tr>
+                                <td>@transaction.Title</td>
+                                <td>@transaction.Amount</td>
+                                <td>@transaction.Date.ToShortDateString()</td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="3" class="text-center">No transactions available.</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Transactions Section -->
+    <div class=" p-2" style="background-color: black;">
+        <div class="d-flex justify-content-between align-items-center mb-3 ">
+
+            <!-- Date Filter Section (Left Side) -->
+            <div class="d-flex mt-4">
+                <input type="date" @bind="StartDate" class="form-control d-inline-block w-auto me-2" />
+                <input type="date" @bind="EndDate" class="form-control d-inline-block w-auto me-2" />
+                <button class="btn btn-primary" @onclick="FilterByDateRange">Filter</button>
+            </div>
+
+            <!-- Sort Button Section (Right Side) -->
+            <div>
+                <button class="btn btn-primary" @onclick="ToggleSortOrder">
+                    Sort: @(IsAscending ? "Ascending" : "Descending")
+                </button>
+            </div>
+        </div>
+
+        <h3 class="text-white font-weight-bold" style="font-size: 2rem;">Display Transactions</h3>
+        <table class="table table-dark table-hover">
+            <thead>
+                <tr>
+                    <th>Title</th>
+                    <th>Type</th>
+                    <th>Amount</th>
+                    <th>Date</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (FilteredTransactions != null && FilteredTransactions.Any())
+                {
+                    @foreach (var transaction in FilteredTransactions)
+                    {
+                        <tr>
+                            <td>@transaction.Title</td>
+                            <td>@transaction.Type</td>
+                            <td>@transaction.Amount</td>
+                            <td>@transaction.Date.ToShortDateString()</td>
+                        </tr>
+                    }
+                }
+                else
+                {
+                    <tr>
+                        <td colspan="4" class="text-center">No transactions available.</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+@code {
+    private decimal TotalIncome = 0;
+    private decimal TotalExpenses = 0;
+    private decimal TotalNetWorth = 0;
+    private decimal TotalDebt = 0;
+    private decimal ClearedDebt = 0;
+    private decimal RemainingDebt = 0;
+    private int TotalTransactions = 0;
+    private decimal TotalTransactionsCalculated = 0;
+
+    private List<TransactionModel> Transactions = new();
+    private List<TransactionModel> FilteredTransactions = new();
+    private bool IsAscending = true;
+    private DateTime? StartDate;
+    private DateTime? EndDate;
+
+    private TransactionModel HighestInflow;
+    private TransactionModel LowestInflow;
+    private TransactionModel HighestOutflow;
+    private TransactionModel LowestOutflow;
+
+    private DebtModel HighestDebt;
+    private DebtModel LowestDebt;
+
+    private List<DebtModel> PendingDebts = new();
+    private List<TransactionModel> Top5Transactions = new(); // Variable for Top 5 Transactions
+    private List<TransactionModel> Top5HighestTransactions = new();
+    private List<TransactionModel> Top5LowestTransactions = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var userId = await JSRuntime.InvokeAsync<string>("localStorage.getItem", "userId");
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                NavigationManager.NavigateTo("/login");
+                return;
+            }
+
+            var id = int.Parse(userId);
+            TotalIncome = TransactionService.CalculateTotalIncome(id);
+            TotalExpenses = TransactionService.CalculateTotalExpenses(id);
+            TotalNetWorth = TotalIncome - TotalExpenses;
+
+            // Fetch transactions
+            Transactions = TransactionService.GetUserTransactions(id);
+            FilteredTransactions = SortTransactionsByDate(Transactions, IsAscending);
+            TotalTransactions = Transactions.Count;
+
+            // Top 5 transactions by amount
+            Top5Transactions = Transactions.OrderByDescending(t => t.Amount).Take(5).ToList();
+            Top5HighestTransactions = await TransactionService.GetTop5HighestTransactions(id);
+            Top5LowestTransactions = await TransactionService.GetTop5LowestTransactions(id);
+
+            // Calculate debt information
+            TotalDebt = DebtService.CalculateTotalDebt(id);
+            ClearedDebt = DebtService.CalculateClearedDebt(id);
+            RemainingDebt = DebtService.CalculateRemainingDebt(id);
+
+            // Fetch highest and lowest transactions
+            HighestInflow = TransactionService.GetHighestIncome(id);
+            LowestInflow = TransactionService.GetLowestIncome(id);
+            HighestOutflow = TransactionService.GetHighestExpense(id);
+            LowestOutflow = TransactionService.GetLowestExpense(id);
+
+            // Fetch highest and lowest debts
+            HighestDebt = DebtService.GetHighestDebt(id);
+            LowestDebt = DebtService.GetLowestDebt(id);
+
+            // Fetch pending debts
+            PendingDebts = DebtService.GetPendingDebts(id);
+
+            // Calculate total transactions based on inflows, debts, and outflows
+            TotalTransactionsCalculated = TotalIncome + TotalDebt - TotalExpenses;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error: {ex.Message}");
+        }
+    }
+
+    private List<TransactionModel> SortTransactionsByDate(List<TransactionModel> transactions, bool ascending)
+    {
+        return ascending
+            ? transactions.OrderBy(t => t.Date).ToList()
+            : transactions.OrderByDescending(t => t.Date).ToList();
+    }
+
+    private void ToggleSortOrder()
+    {
+        IsAscending = !IsAscending;
+        FilteredTransactions = SortTransactionsByDate(Transactions, IsAscending);
+    }
+
+    private void FilterByDateRange()
+    {
+        if (StartDate.HasValue && EndDate.HasValue)
+        {
+            FilteredTransactions = Transactions.Where(t => t.Date >= StartDate.Value && t.Date <= EndDate.Value).ToList();
+        }
+    }
+}

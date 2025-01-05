@@ -1,0 +1,72 @@
+﻿@page "/display-debt"
+@using ExpenseTracker.Models
+@inject DebtService DebtService
+@inject IJSRuntime JSRuntime
+@inject NavigationManager NavigationManager
+
+<section class="container mt-5">
+    <h2 class="text-center mb-4" style="font-weight: bold; color: red; font-size: 36px;">
+        User Debts
+    </h2>
+
+    <table class="table table-striped table-bordered">
+        <thead>
+            <tr style="color: white;">
+                <th>Debt Type</th>
+                <th>Amount</th>
+                <th>Paid Amount</th>
+                <th>Remaining Amount</th>
+                <th>Source</th>
+                <th>Due Date</th>
+                <th>Is Cleared</th>
+                <th>Cleared Date</th>
+                <th>Notes</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (Debts.Any())
+            {
+                foreach (var debt in Debts)
+                {
+                    <tr style="color: white;">
+                        <td>@debt.Type.ToString()</td>
+                        <td>@debt.Amount.ToString("C")</td>
+                        <td>@debt.PaidAmount.ToString("C")</td>
+                        <td>@debt.RemainigAmount.ToString("C")</td> <!-- Display Remaining Amount -->
+                        <td>@debt.Source</td>
+                        <td>@debt.DueDate.ToString("yyyy-MM-dd")</td>
+                        <td>@(debt.IsCleared ? "Yes" : "No")</td> <!-- Display IsCleared status -->
+                        <td>@(debt.ClearedDate?.ToString("yyyy-MM-dd") ?? "N/A")</td> <!-- Display Cleared Date -->
+                        <td>@debt.Notes</td>
+                    </tr>
+                }
+            }
+            else
+            {
+                <tr>
+                    <td colspan="13" class="text-center">No debts found.</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</section>
+
+@code {
+    private List<DebtModel> Debts = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Fetch the userId from localStorage
+        var userId = await JSRuntime.InvokeAsync<string>("localStorage.getItem", "userId");
+
+        if (int.TryParse(userId, out var parsedUserId))
+        {
+            // Load debts specific to the user
+            Debts = DebtService.GetAllUserDebts(parsedUserId);
+        }
+        else
+        {
+            await JSRuntime.InvokeVoidAsync("alert", "Invalid User ID found in localStorage.");
+        }
+    }
+}

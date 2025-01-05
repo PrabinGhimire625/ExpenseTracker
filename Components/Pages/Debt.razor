@@ -1,0 +1,160 @@
+﻿@page "/debt"
+@using ExpenseTracker.Models
+@inject DebtService DebtService
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JSRuntime
+
+<section class="">
+    <div class="d-flex justify-content-center align-items-center min-vh-100">
+        <!-- Debt Form -->
+        <div class="card shadow-sm border-0 p-3 " style="width: 400px; background-color: #fef9f9; border-radius: 16px;">
+            <!-- Debt Form Header -->
+            <div class="mb-4">
+                <div class="rounded-circle bg-light mx-auto" style="width: 60px; height: 60px;">
+                    <img src="logo.png" alt="Logo" class="rounded-circle" style="width: 60px; height: 60px; object-fit: cover;" />
+                </div>
+            </div>
+            <h2 class="text-center mb-4" style="color: #5f2eea;">Debt</h2>
+
+            <!-- Debt Form -->
+            <form @onsubmit="OnSaveDebt">
+                <!-- Amount Input -->
+                <div class="mb-3">
+                    <label for="DebtAmount">Amount</label>
+                    <input type="number" class="form-control" placeholder="Amount" style="font-weight: 300;" @bind="DebtAmount" required min="0" step="any" id="DebtAmount">
+                </div>
+
+                <div class="mb-3">
+                    <label for="DebtType">Debt Type</label>
+                    <select class="form-select" @bind="DebtType" id="DebtType">
+                        <option value="Take">Take</option>
+                        <option value="Give">Give</option>
+                    </select>
+                </div>
+
+
+                <!-- Conditionally show Paid Amount Input if DebtType is "Give" -->
+                @if (DebtType == "Give")
+                {
+                    <div class="mb-3">
+                        <label for="PaidAmount">Paid Amount</label>
+                        <input type="number" class="form-control" placeholder="Paid Amount" style="font-weight: 300;" @bind="PaidAmount" min="0" step="any" id="PaidAmount">
+                    </div>
+                }
+
+                <!-- Source Dropdown -->
+                <div class="mb-3">
+                    <label for="DebtSource">Source</label>
+                    <select class="form-select" @bind="DebtSource" id="DebtSource">
+                        <option disabled value="">Select Source</option>
+                        <option value="bank">Bank</option>
+                        <option value="cash">Cash</option>
+                        <option value="online">Online</option>
+                        <option value="cheque">Cheque</option>
+                        <option value="loan">Loan</option>
+                        <option value="gift">Gift</option>
+                        <option value="bonus">Bonus</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+
+                <!-- Due Date Input -->
+                <div class="mb-3">
+                    <label for="DueDate">Due Date</label>
+                    <input type="date" class="form-control" placeholder="Due Date" style="font-weight: 300;" @bind="DueDate" required id="DueDate">
+                </div>
+
+                <!-- Notes Input -->
+                <div class="mb-3">
+                    <label for="DebtNotes">Notes</label>
+                    <textarea class="form-control" rows="3" placeholder="Notes" style="font-weight: 300;" @bind="DebtNotes" id="DebtNotes"></textarea>
+                </div>
+
+                <!-- Save and Cancel Buttons -->
+                <div class="d-flex justify-content-between">
+                    <button type="submit" class="btn w-45" style="background-color: #5f2eea; color: white;">Save</button>
+                    <button type="button" class="btn w-45" style="background-color: #c0392b; color: white;" @onclick="OnCancel">Cancel</button>
+                </div>
+            </form>
+
+            <!-- Success/Message -->
+            @if (!string.IsNullOrEmpty(Message))
+            {
+                <p class="text-center text-muted">@Message</p>
+            }
+        </div>
+    </div>
+</section>
+
+@code {
+    private decimal DebtAmount = 0;
+    private decimal PaidAmount = 0;
+    private DateTime DueDate = DateTime.Now;
+    private string DebtSource = "";
+    private string DebtNotes = "";
+    private string DebtType = "Take";  // Default to "Take"
+    private string Message = "";
+
+    private List<DebtModel> Debts = new();
+
+    protected override void OnInitialized()
+    {
+        // Load existing debts from the DebtService
+        Debts = DebtService.GetAllDebts();
+    }
+
+    private async Task OnSaveDebt()
+    {
+        // Retrieve the userId from localStorage
+        var userId = await JSRuntime.InvokeAsync<string>("localStorage.getItem", "userId");
+        if (string.IsNullOrEmpty(userId))
+        {
+            Message = "User ID not found. Please log in.";
+            return;
+        }
+
+        // Generate a unique Debt ID (Same logic as transaction ID)
+        var newDebtId = Debts.Any() ? Debts.Max(d => d.Id) + 1 : 1;
+
+        // Save the debt only if the form is valid
+        if (DebtAmount <= 0 || string.IsNullOrWhiteSpace(DebtSource))
+        {
+            Message = "Amount and Tags are required.";
+            return;
+        }
+
+        // Convert DebtType string to DebtType enum
+        if (!Enum.TryParse(DebtType, out DebtType debtType))
+        {
+            Message = "Invalid debt type.";
+            return;
+        }
+
+
+        // Create a new DebtModel
+        var newDebt = new DebtModel
+            {
+                Id = newDebtId, // Assign the new unique Debt ID
+                UserId = int.Parse(userId), // Associate the debt with the user
+                Amount = DebtAmount,
+                PaidAmount = PaidAmount,
+                DueDate = DueDate,
+                Source = DebtSource,
+                Notes = DebtNotes,
+                Type = debtType, // Use DebtType enum value
+                Date = DateTime.Now
+            };
+
+        // Save the new debt using DebtService
+        Debts.Add(newDebt); // Add the new debt to the local list
+        DebtService.SaveDebts(Debts); // Save the updated list of debts
+
+        Message = "Debt saved successfully!";
+    }
+
+    private void OnCancel()
+    {
+        // Navigate to the home page or reset the form as needed
+        NavigationManager.NavigateTo("/home");
+    }
+}

@@ -1,0 +1,78 @@
+﻿@page "/login"
+@using ExpenseTracker.Components.Layout
+@layout FirstLayout
+@using ExpenseTracker.Models
+@inject UserService UserService
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JSRuntime
+
+<section class="bg-light">
+    <div class="d-flex justify-content-center align-items-center min-vh-100">
+        <div class="card shadow-lg border-0 p-4" style="width: 400px; border-radius: 16px;">
+            <div class="d-flex justify-content-center mb-4">
+                <img src="logo.png" alt="Logo" class="rounded-circle" style="width: 60px; height: 60px; object-fit: cover;" />
+            </div>
+
+            <h2 class="text-center mb-4">Login</h2>
+
+            <form @onsubmit="OnLogin">
+                <div class="mb-3">
+                    <input type="email" class="form-control text-muted" placeholder="email" style="font-weight: 300;" @bind="LoginEmail" required>
+                </div>
+
+                <div class="mb-3">
+                    <input type="password" class="form-control text-muted" placeholder="password" style="font-weight: 300;" @bind="LoginPassword" required>
+                </div>
+
+                <button type="submit" class="btn btn-primary w-100 py-2 mb-3">Login</button>
+            </form>
+
+            @if (!string.IsNullOrEmpty(Message))
+            {
+                <p class="text-center mt-3 fw-bold @(Message == "Invalid password." || Message == "Email not found." ? "text-danger" : "text-success")">
+                    @Message
+                </p>
+            }
+
+            <div class="text-center mt-2">
+                <p class="mb-0">Don't have an account? <a href="/register" class="text-primary text-decoration-none">Sign up here</a></p>
+            </div>
+        </div>
+    </div>
+</section>
+
+@code {
+    private string LoginEmail = "";
+    private string LoginPassword = "";
+    private string Message = "";
+
+    private async Task OnLogin()
+    {
+        var users = UserService.LoadUsers();
+
+        var user = users.FirstOrDefault(u => u.Email == LoginEmail);
+
+        if (user == null)
+        {
+            Message = "Email not found.";
+            return;
+        }
+
+        if (!UserService.ValidatePassword(LoginPassword, user.Password))
+        {
+            Message = "Invalid password.";
+            return;
+        }
+
+        // Save userId to local storage
+        await JSRuntime.InvokeVoidAsync("localStorage.setItem", "userId", user.Id.ToString());
+        Message = "Login successful Redirecting to dashboard";
+        StateHasChanged();  // Immediately refresh the UI to show the success message
+
+        // Delay for 10 seconds before redirecting
+        await Task.Delay(2000);
+
+        // Navigate to the dashboard
+        NavigationManager.NavigateTo("/dashboard");
+    }
+}

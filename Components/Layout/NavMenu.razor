@@ -1,27 +1,33 @@
-﻿<div class="top-row ps-3 navbar navbar-dark">
-    <div class="container-fluid">
-        <a class="navbar-brand" href="">ExpenseTracker</a>
+﻿<div class="d-flex vh-100">
+    <!-- Sidebar -->
+    <div class="sidebar text-white p-3" style="width: 250px; background-color: #333333;">
+        <!-- Logo and Profile -->
+        <div class="text-center py-3 border-bottom">
+            <img src="logo.png" alt="Logo" class="rounded-circle" style="width: 80px; height: 80px;">
+            <h5 class="mt-2">Prabin Ghimire</h5>
+        </div>
+        <!-- Navigation Links -->
+        <nav class="nav flex-column text-white mt-4">
+            <a href="/dashboard" class="nav-link text-white active">
+                <span class="me-2">🏠</span> Dashboard
+            </a>
+            <a href="/transaction" class="nav-link text-white">
+                <span class="me-2">📂</span> Transaction
+            </a>
+            <hr class="text-white">
+            <a href="/debt" class="nav-link text-white">
+                <span class="me-2">📊</span> Debts
+            </a>
+            <a href="/display-transaction" class="nav-link text-white">
+                <span class="me-2">📋</span> Display Transaction
+            </a>
+            <a href="/display-debt" class="nav-link text-white">
+                <span class="me-2">💳</span> Display Debts
+            </a>
+            <a href="/topTransaction" class="nav-link text-white">
+                <span class="me-2">⏳</span> Top 5 transaction
+            </a>
+        </nav>
+
     </div>
-</div>
-
-<input type="checkbox" title="Navigation menu" class="navbar-toggler" />
-
-<div class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click()">
-    <nav class="flex-column">
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
-                <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Home
-            </NavLink>
-        </div>
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="counter">
-                <span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> Counter
-            </NavLink>
-        </div>
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="weather">
-                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Weather
-            </NavLink>
-        </div>
-    </nav>
 </div>

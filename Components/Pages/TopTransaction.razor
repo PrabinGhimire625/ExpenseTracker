@@ -1,0 +1,98 @@
+﻿@page "/topTransaction"
+@using ExpenseTracker.Models
+@inject TransactionService TransactionService
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+
+<LayoutView>
+    <div class="p-2 mb-3" style="background-color: black;">
+        <h3 class="text-white font-weight-bold" style="font-size: 2rem;">Top 5 Highest Transactions</h3>
+        <table class="table table-dark table-hover">
+            <thead>
+                <tr>
+                    <th>Title</th>
+                    <th>Amount</th>
+                    <th>Date</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Top5HighestTransactions != null && Top5HighestTransactions.Any())
+                {
+                    @foreach (var transaction in Top5HighestTransactions)
+                    {
+                        <tr>
+                            <td>@transaction.Title</td>
+                            <td>@transaction.Amount</td>
+                            <td>@transaction.Date.ToShortDateString()</td>
+                        </tr>
+                    }
+                }
+                else
+                {
+                    <tr>
+                        <td colspan="3" class="text-center">No transactions available.</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <div class="p-2 mb-3" style="background-color: black;">
+        <h3 class="text-white font-weight-bold" style="font-size: 2rem;">Top 5 Lowest Transactions</h3>
+        <table class="table table-dark table-hover">
+            <thead>
+                <tr>
+                    <th>Title</th>
+                    <th>Amount</th>
+                    <th>Date</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Top5LowestTransactions != null && Top5LowestTransactions.Any())
+                {
+                    @foreach (var transaction in Top5LowestTransactions)
+                    {
+                        <tr>
+                            <td>@transaction.Title</td>
+                            <td>@transaction.Amount</td>
+                            <td>@transaction.Date.ToShortDateString()</td>
+                        </tr>
+                    }
+                }
+                else
+                {
+                    <tr>
+                        <td colspan="3" class="text-center">No transactions available.</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</LayoutView>
+
+@code {
+    private List<TransactionModel> Top5HighestTransactions = new();
+    private List<TransactionModel> Top5LowestTransactions = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var userId = await JSRuntime.InvokeAsync<string>("localStorage.getItem", "userId");
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                Navigation.NavigateTo("/login");
+                return;
+            }
+
+            var id = int.Parse(userId);
+            Top5HighestTransactions = await TransactionService.GetTop5HighestTransactions(id);
+            Top5LowestTransactions = await TransactionService.GetTop5LowestTransactions(id);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading transactions: {ex.Message}");
+        }
+    }
+}

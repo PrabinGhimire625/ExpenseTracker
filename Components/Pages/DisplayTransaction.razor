@@ -1,0 +1,157 @@
+﻿@page "/display-transaction"
+@using ExpenseTracker.Models
+@inject TransactionService TransactionService
+@inject IJSRuntime JSRuntime
+@inject NavigationManager NavigationManager
+
+<section class="container mt-5">
+    <h2 class="text-center mb-4" style="font-weight: bold; color: red; font-size: 36px;">
+        User Transactions
+    </h2>
+
+    <!-- Search by Title -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <input type="text" class="form-control" placeholder="Search by title"
+                   @bind="SearchTitle"
+                   @oninput="SearchTransactionsByTitle" />
+        </div>
+    </div>
+
+    <!-- Filter Section -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <input type="text" class="form-control" placeholder="Search by tags (comma-separated)" @bind="SearchTags" />
+        </div>
+        <div class="col-md-3">
+            <select class="form-select" @bind="SelectedType">
+                <option value="">All Types</option>
+                <option value="Credit">Credit</option>
+                <option value="Debit">Debit</option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <input type="date" class="form-control" @bind="TransactionDate" />
+        </div>
+        <div class="col-md-3">
+            <button class="btn btn-primary w-100" @onclick="ApplyFilters">Search</button>
+        </div>
+    </div>
+
+    <!-- Toggle Sort Order Button -->
+    <div class="d-flex justify-content-end mb-3">
+        <button class="btn btn-primary" @onclick="ToggleSortOrder">
+            Sort: @(IsAscending ? "Ascending" : "Descending")
+        </button>
+    </div>
+
+    <table class="table table-striped table-bordered">
+        <thead>
+            <tr style="color: white;">
+                <th>ID</th>
+                <th>Title</th>
+                <th>Type</th>
+                <th>Amount</th>
+                <th>Date</th>
+                <th>Source</th>
+                <th>Tags</th>
+                <th>Notes</th>
+            </tr>
+        </thead>
+        <tbody class="font-light">
+            @if (FilteredTransactions.Any())
+            {
+                foreach (var transaction in FilteredTransactions)
+                {
+                    <tr style="color: white;">
+                        <td>@transaction.Id</td>
+                        <td>@transaction.Title</td>
+                        <td>@transaction.Type</td>
+                        <td>@transaction.Amount</td>
+                        <td>@transaction.Date.ToString("yyyy-MM-dd")</td>
+                        <td>@string.Join(", ", transaction.Source ?? new List<string>())</td>
+                        <td>@string.Join(", ", transaction.Tags ?? new List<string>())</td>
+                        <td>@transaction.Notes</td>
+                    </tr>
+                }
+            }
+            else
+            {
+                <tr>
+                    <td colspan="8" class="text-center">No transactions match the filters.</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</section>
+
+@code {
+    private List<TransactionModel> UserTransactions = new();
+    private List<TransactionModel> FilteredTransactions = new();
+    private bool IsAscending = true;  // Track sort order state
+
+    private string SearchTitle { get; set; } = string.Empty;
+    private string SearchTags { get; set; } = string.Empty;
+    private string SelectedType { get; set; } = string.Empty;
+    private DateTime? TransactionDate { get; set; } = null;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var userId = await JSRuntime.InvokeAsync<string>("localStorage.getItem", "userId");
+        if (int.TryParse(userId, out var parsedUserId))
+        {
+            UserTransactions = TransactionService.GetUserTransactions(parsedUserId);
+            FilteredTransactions = new List<TransactionModel>(UserTransactions);
+        }
+        else
+        {
+            await JSRuntime.InvokeVoidAsync("alert", "Invalid User ID found in localStorage.");
+        }
+    }
+
+    private void ApplyFilters()
+    {
+        var tags = SearchTags.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToList();
+
+        FilteredTransactions = TransactionService.FilterTransactions(
+            UserTransactions.First().UserId,
+            SelectedType,
+            tags,
+            TransactionDate
+        );
+
+        // Apply sorting after filtering
+        SortTransactions();
+    }
+
+    private async Task SearchTransactionsByTitle(ChangeEventArgs e)
+    {
+        SearchTitle = e.Value?.ToString() ?? string.Empty;
+        var userId = await JSRuntime.InvokeAsync<string>("localStorage.getItem", "userId");
+
+        if (int.TryParse(userId, out var parsedUserId))
+        {
+            FilteredTransactions = TransactionService.SearchByTitle(parsedUserId, SearchTitle);
+        }
+        else
+        {
+            await JSRuntime.InvokeVoidAsync("alert", "Invalid User ID found in localStorage.");
+        }
+
+        // Apply sorting after search
+        SortTransactions();
+    }
+
+    private void ToggleSortOrder()
+    {
+        IsAscending = !IsAscending;
+        SortTransactions();
+    }
+
+    private void SortTransactions()
+    {
+        FilteredTransactions = IsAscending
+            ? FilteredTransactions.OrderBy(t => t.Date).ToList()
+            : FilteredTransactions.OrderByDescending(t => t.Date).ToList();
+    }
+}

@@ -18,9 +18,12 @@ namespace ExpenseTracker
 
 #if DEBUG
     		builder.Services.AddBlazorWebViewDeveloperTools();
+
     		builder.Logging.AddDebug();
 #endif
-
+            builder.Services.AddSingleton<UserService>();
+            builder.Services.AddSingleton<TransactionService>();
+            builder.Services.AddSingleton<DebtService>();
             return builder.Build();
         }
     }
