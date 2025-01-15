@@ -25,6 +25,7 @@ namespace ExpenseTracker
             builder.Services.AddSingleton<TransactionService>();
             builder.Services.AddSingleton<DebtService>();
             builder.Services.AddSingleton<ExcelExportService>();
+            builder.Services.AddSingleton<CurrencyService>();
             return builder.Build();
         }
     }

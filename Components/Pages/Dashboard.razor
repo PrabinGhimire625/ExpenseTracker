@@ -6,16 +6,16 @@
 @inject IJSRuntime JSRuntime
 @using OfficeOpenXml
 @inject ExcelExportService ExcelExportService
-
+@inject CurrencyService CurrencyService
 
 <div class="main-content container py-4" style="color: white;">
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h1 style="font-weight: bold;">Dashboard</h1>
-        <button class="btn btn-primary" @onclick="DownloadTransactions">Download Transaction</button>
+        @* <button class="btn btn-primary" @onclick="DownloadTransactions">Download Transaction</button> *@
         <div class="d-flex align-items-center">
             <select class="form-select" style="font-weight: 300;" name="RegisterCurrency" @onchange="OnCurrencyChange">
                 <option value="" disabled selected>Select currency</option>
-                <option value="USD">USD</option>        
+                <option value="USD">USD</option>
                 <option value="NPR">NPR</option>
             </select>
 
@@ -25,14 +25,13 @@
         </div>
     </div>
 
-
     <!-- Summary Cards -->
     <div class="row g-3">
         <div class="col-md-3">
             <div class="card text-center bg-dark text-white shadow-sm">
                 <div class="card-body">
                     <h6>Total Net Worth</h6>
-                    <p class="display-6 text-danger"> @SelectedCurrencySymbol @TotalNetWorth</p>
+                    <p class="display-6 text-danger"> @CurrencyService.SelectedCurrencySymbol @TotalNetWorth</p>
                 </div>
             </div>
         </div>
@@ -40,7 +39,7 @@
             <div class="card text-center bg-dark text-white shadow-sm">
                 <div class="card-body">
                     <h6>Total Income</h6>
-                    <p class="display-6 text-success">@SelectedCurrencySymbol @TotalIncome</p>
+                    <p class="display-6 text-success">@CurrencyService.SelectedCurrencySymbol @TotalIncome</p>
                 </div>
             </div>
         </div>
@@ -48,7 +47,7 @@
             <div class="card text-center bg-dark text-white shadow-sm">
                 <div class="card-body">
                     <h6>Total Expenses</h6>
-                    <p class="display-6 text-warning">@SelectedCurrencySymbol @TotalExpenses</p>
+                    <p class="display-6 text-warning">@CurrencyService.SelectedCurrencySymbol @TotalExpenses</p>
                 </div>
             </div>
         </div>
@@ -57,10 +56,10 @@
                 <div class="card-body p-3">
                     <h5 class="card-title text-danger">Transaction overview</h5>
                     <p class="card-text">
-                        <strong>No of transaction:</strong> @SelectedCurrencySymbol @TotalTransactions
+                        <strong>No of transaction:</strong> @CurrencyService.SelectedCurrencySymbol @TotalTransactions
                     </p>
-                    <p class="">
-                        <strong>Total-transaction:</strong>@SelectedCurrencySymbol @TotalTransactionsCalculated
+                    <p class="card-text">
+                        <strong>Total-transaction:</strong>@CurrencyService.SelectedCurrencySymbol @TotalTransactionsCalculated
                     </p>
                 </div>
             </div>
@@ -70,16 +69,16 @@
                 <div class="card-body p-4">
                     <h5 class="card-title text-warning">Inflow/Outflow Overview</h5>
                     <p class="card-text">
-                        <strong>Highest Inflow:</strong>@SelectedCurrencySymbol @HighestInflow?.Amount
+                        <strong>Highest Inflow:</strong>@CurrencyService.SelectedCurrencySymbol @HighestInflow?.Amount
                     </p>
                     <p class="card-text">
-                        <strong>Lowest Inflow:</strong>@SelectedCurrencySymbol @LowestInflow?.Amount
+                        <strong>Lowest Inflow:</strong>@CurrencyService.SelectedCurrencySymbol @LowestInflow?.Amount
                     </p>
                     <p class="card-text">
-                        <strong>Highest Outflow:</strong>@SelectedCurrencySymbol @HighestOutflow?.Amount
+                        <strong>Highest Outflow:</strong>@CurrencyService.SelectedCurrencySymbol @HighestOutflow?.Amount
                     </p>
                     <p class="card-text">
-                        <strong>Lowest Outflow:</strong>@SelectedCurrencySymbol @LowestOutflow?.Amount
+                        <strong>Lowest Outflow:</strong>@CurrencyService.SelectedCurrencySymbol @LowestOutflow?.Amount
                     </p>
                 </div>
             </div>
@@ -90,19 +89,19 @@
                 <div class="card-body p-4">
                     <h5 class="card-title text-success">Debts Overview</h5>
                     <p class="card-text">
-                        <strong>Total Debts:</strong>@SelectedCurrencySymbol @TotalDebt
+                        <strong>Total Debts:</strong>@CurrencyService.SelectedCurrencySymbol @TotalDebt
                     </p>
                     <p class="card-text">
-                        <strong>Cleared Debts:</strong>@SelectedCurrencySymbol @ClearedDebt
+                        <strong>Cleared Debts:</strong>@CurrencyService.SelectedCurrencySymbol @ClearedDebt
                     </p>
                     <p class="card-text">
-                        <strong>Remaining Debts:</strong> @SelectedCurrencySymbol @RemainingDebt
+                        <strong>Remaining Debts:</strong> @CurrencyService.SelectedCurrencySymbol @RemainingDebt
                     </p>
                     <p class="card-text">
-                        <strong>Highest Debts:</strong>@SelectedCurrencySymbol @HighestDebt?.Amount
+                        <strong>Highest Debts:</strong>@CurrencyService.SelectedCurrencySymbol @HighestDebt?.Amount
                     </p>
                     <p class="card-text">
-                        <strong>Lowest Debts:</strong> @SelectedCurrencySymbol @LowestOutflow?.Amount
+                        <strong>Lowest Debts:</strong>@CurrencyService.SelectedCurrencySymbol @LowestOutflow?.Amount
                     </p>
                 </div>
             </div>
@@ -296,6 +295,14 @@
     private List<TransactionModel> Top5HighestTransactions = new();
     private List<TransactionModel> Top5LowestTransactions = new();
 
+    // Added USD values to be calculated and converted later
+    private decimal TotalIncomeUSD = 0;
+    private decimal TotalExpensesUSD = 0;
+    private decimal TotalNetWorthUSD = 0;
+    private decimal TotalDebtUSD = 0;
+    private decimal ClearedDebtUSD = 0;
+    private decimal RemainingDebtUSD = 0;
+
     protected override async Task OnInitializedAsync()
     {
         try
@@ -309,9 +316,11 @@
             }
 
             var id = int.Parse(userId);
-            TotalIncome = TransactionService.CalculateTotalIncome(id);
-            TotalExpenses = TransactionService.CalculateTotalExpenses(id);
-            TotalNetWorth = TotalIncome - TotalExpenses;
+
+            // Store values in USD first
+            TotalIncomeUSD = TransactionService.CalculateTotalIncome(id);
+            TotalExpensesUSD = TransactionService.CalculateTotalExpenses(id);
+            TotalNetWorthUSD = TotalIncomeUSD - TotalExpensesUSD;
 
             // Fetch transactions
             Transactions = TransactionService.GetUserTransactions(id);
@@ -324,9 +333,9 @@
             Top5LowestTransactions = await TransactionService.GetTop5LowestTransactions(id);
 
             // Calculate debt information
-            TotalDebt = DebtService.CalculateTotalDebt(id);
-            ClearedDebt = DebtService.CalculateClearedDebt(id);
-            RemainingDebt = DebtService.CalculateRemainingDebt(id);
+            TotalDebtUSD = DebtService.CalculateTotalDebt(id);
+            ClearedDebtUSD = DebtService.CalculateClearedDebt(id);
+            RemainingDebtUSD = DebtService.CalculateRemainingDebt(id);
 
             // Fetch highest and lowest transactions
             HighestInflow = TransactionService.GetHighestIncome(id);
@@ -342,7 +351,10 @@
             PendingDebts = DebtService.GetPendingDebts(id);
 
             // Calculate total transactions based on inflows, debts, and outflows
-            TotalTransactionsCalculated = TotalIncome + TotalDebt - TotalExpenses;
+            TotalTransactionsCalculated = TotalIncomeUSD + TotalDebtUSD - TotalExpensesUSD;
+
+            // Recalculate the displayed financials with the selected currency
+            UpdateFinancialData();
         }
         catch (Exception ex)
         {
@@ -371,28 +383,29 @@
         }
     }
 
-    private readonly Dictionary<string, string> CurrencySymbols = new()
-{
-    { "USD", "$" },
-    { "EUR", "€" },
-    { "NPR", "₨" },
-    { "AUD", "A$" }
-};
-
-    private string SelectedCurrency = "NPR"; // Default currency
-    private string SelectedCurrencySymbol => CurrencySymbols.ContainsKey(SelectedCurrency)
-        ? CurrencySymbols[SelectedCurrency]
-        : string.Empty;
-
+    // Method to handle currency change
     private void OnCurrencyChange(ChangeEventArgs e)
     {
-        SelectedCurrency = e.Value.ToString();
+        CurrencyService.SetCurrency(e.Value.ToString());
+        UpdateFinancialData();
     }
 
-    // Call the service to download transactions
-    private async Task DownloadTransactions()
+    // Method to update financial data
+    private void UpdateFinancialData()
     {
-        await ExcelExportService.DownloadTransactions(Transactions);
+        // Convert the USD amounts to the selected currency
+        TotalIncome = TotalIncomeUSD * CurrencyService.GetConversionRate(CurrencyService.SelectedCurrency);
+        TotalExpenses = TotalExpensesUSD * CurrencyService.GetConversionRate(CurrencyService.SelectedCurrency);
+        TotalNetWorth = TotalNetWorthUSD * CurrencyService.GetConversionRate(CurrencyService.SelectedCurrency);
+        TotalDebt = TotalDebtUSD * CurrencyService.GetConversionRate(CurrencyService.SelectedCurrency);
+        ClearedDebt = ClearedDebtUSD * CurrencyService.GetConversionRate(CurrencyService.SelectedCurrency);
+        RemainingDebt = RemainingDebtUSD * CurrencyService.GetConversionRate(CurrencyService.SelectedCurrency);
     }
 
+    // private async Task DownloadTransactions()
+    // {
+    //     var file = await ExcelExportService.ExportTransactionsToExcel(FilteredTransactions);
+    //     var fileName = "transactions.xlsx";
+    //     await JSRuntime.InvokeVoidAsync("saveAsFile", fileName, file);
+    // }
 }
