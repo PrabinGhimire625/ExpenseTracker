@@ -4,15 +4,27 @@
 @inject TransactionService TransactionService
 @inject DebtService DebtService
 @inject IJSRuntime JSRuntime
+@using OfficeOpenXml
+@inject ExcelExportService ExcelExportService
+
 
 <div class="main-content container py-4" style="color: white;">
     <div class="d-flex justify-content-between align-items-center mb-3">
-        <h1 style="font-weight: bold; ">Dashboard</h1>
+        <h1 style="font-weight: bold;">Dashboard</h1>
+        <button class="btn btn-primary" @onclick="DownloadTransactions">Download Transaction</button>
         <div class="d-flex align-items-center">
-            <div id="currentDate" class="text-white"></div>
-            <a href="/login"><button class="btn btn-success ms-3">Logout</button></a>
+            <select class="form-select" style="font-weight: 300;" name="RegisterCurrency" @onchange="OnCurrencyChange">
+                <option value="" disabled selected>Select currency</option>
+                <option value="USD">USD</option>        
+                <option value="NPR">NPR</option>
+            </select>
+
+            <a href="/login">
+                <button class="btn btn-success ms-3">Logout</button>
+            </a>
         </div>
     </div>
+
 
     <!-- Summary Cards -->
     <div class="row g-3">
@@ -20,7 +32,7 @@
             <div class="card text-center bg-dark text-white shadow-sm">
                 <div class="card-body">
                     <h6>Total Net Worth</h6>
-                    <p class="display-6 text-danger">@TotalNetWorth</p>
+                    <p class="display-6 text-danger"> @SelectedCurrencySymbol @TotalNetWorth</p>
                 </div>
             </div>
         </div>
@@ -28,7 +40,7 @@
             <div class="card text-center bg-dark text-white shadow-sm">
                 <div class="card-body">
                     <h6>Total Income</h6>
-                    <p class="display-6 text-success">@TotalIncome</p>
+                    <p class="display-6 text-success">@SelectedCurrencySymbol @TotalIncome</p>
                 </div>
             </div>
         </div>
@@ -36,7 +48,7 @@
             <div class="card text-center bg-dark text-white shadow-sm">
                 <div class="card-body">
                     <h6>Total Expenses</h6>
-                    <p class="display-6 text-warning">@TotalExpenses</p>
+                    <p class="display-6 text-warning">@SelectedCurrencySymbol @TotalExpenses</p>
                 </div>
             </div>
         </div>
@@ -45,10 +57,10 @@
                 <div class="card-body p-3">
                     <h5 class="card-title text-danger">Transaction overview</h5>
                     <p class="card-text">
-                        <strong>No of transaction:</strong> @TotalTransactions
+                        <strong>No of transaction:</strong> @SelectedCurrencySymbol @TotalTransactions
                     </p>
                     <p class="">
-                        <strong>Total-transaction:</strong> @TotalTransactionsCalculated
+                        <strong>Total-transaction:</strong>@SelectedCurrencySymbol @TotalTransactionsCalculated
                     </p>
                 </div>
             </div>
@@ -58,16 +70,16 @@
                 <div class="card-body p-4">
                     <h5 class="card-title text-warning">Inflow/Outflow Overview</h5>
                     <p class="card-text">
-                        <strong>Highest Inflow:</strong> @HighestInflow?.Amount
+                        <strong>Highest Inflow:</strong>@SelectedCurrencySymbol @HighestInflow?.Amount
                     </p>
                     <p class="card-text">
-                        <strong>Lowest Inflow:</strong> @LowestInflow?.Amount
+                        <strong>Lowest Inflow:</strong>@SelectedCurrencySymbol @LowestInflow?.Amount
                     </p>
                     <p class="card-text">
-                        <strong>Highest Outflow:</strong> @HighestOutflow?.Amount
+                        <strong>Highest Outflow:</strong>@SelectedCurrencySymbol @HighestOutflow?.Amount
                     </p>
                     <p class="card-text">
-                        <strong>Lowest Outflow:</strong> @LowestOutflow?.Amount
+                        <strong>Lowest Outflow:</strong>@SelectedCurrencySymbol @LowestOutflow?.Amount
                     </p>
                 </div>
             </div>
@@ -78,19 +90,19 @@
                 <div class="card-body p-4">
                     <h5 class="card-title text-success">Debts Overview</h5>
                     <p class="card-text">
-                        <strong>Total Debts:</strong> @TotalDebt
+                        <strong>Total Debts:</strong>@SelectedCurrencySymbol @TotalDebt
                     </p>
                     <p class="card-text">
-                        <strong>Cleared Debts:</strong> @ClearedDebt
+                        <strong>Cleared Debts:</strong>@SelectedCurrencySymbol @ClearedDebt
                     </p>
                     <p class="card-text">
-                        <strong>Remaining Debts:</strong> @RemainingDebt
+                        <strong>Remaining Debts:</strong> @SelectedCurrencySymbol @RemainingDebt
                     </p>
                     <p class="card-text">
-                        <strong>Highest Debts:</strong> @HighestDebt?.Amount
+                        <strong>Highest Debts:</strong>@SelectedCurrencySymbol @HighestDebt?.Amount
                     </p>
                     <p class="card-text">
-                        <strong>Lowest Debts:</strong> @LowestOutflow?.Amount
+                        <strong>Lowest Debts:</strong> @SelectedCurrencySymbol @LowestOutflow?.Amount
                     </p>
                 </div>
             </div>
@@ -358,4 +370,29 @@
             FilteredTransactions = Transactions.Where(t => t.Date >= StartDate.Value && t.Date <= EndDate.Value).ToList();
         }
     }
+
+    private readonly Dictionary<string, string> CurrencySymbols = new()
+{
+    { "USD", "$" },
+    { "EUR", "€" },
+    { "NPR", "₨" },
+    { "AUD", "A$" }
+};
+
+    private string SelectedCurrency = "NPR"; // Default currency
+    private string SelectedCurrencySymbol => CurrencySymbols.ContainsKey(SelectedCurrency)
+        ? CurrencySymbols[SelectedCurrency]
+        : string.Empty;
+
+    private void OnCurrencyChange(ChangeEventArgs e)
+    {
+        SelectedCurrency = e.Value.ToString();
+    }
+
+    // Call the service to download transactions
+    private async Task DownloadTransactions()
+    {
+        await ExcelExportService.DownloadTransactions(Transactions);
+    }
+
 }

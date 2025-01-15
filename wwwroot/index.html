@@ -10,7 +10,6 @@
     <link rel="stylesheet" href="ExpenseTracker.styles.css" />
     <link rel="icon" type="image/png" href="favicon.png" />
     <link href="css/output.css" rel="stylesheet">
-
 </head>
 
 <body>
@@ -27,6 +26,16 @@
 
     <script src="_framework/blazor.webview.js" autostart="false"></script>
 
-</body>
+    <!-- Include FileSaver.js library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
 
+    <!-- Define the saveAsFile function -->
+    <script>
+        function saveAsFile(fileName, byteArray) {
+            var blob = new Blob([byteArray], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+            saveAs(blob, fileName);
+        }
+    </script>
+
+</body>
 </html>
