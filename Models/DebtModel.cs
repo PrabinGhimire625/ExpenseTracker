@@ -19,6 +19,9 @@
         public DateTime? ClearedDate => IsCleared ? DateTime.Now : (DateTime?)null;
         public string Notes { get; set; } 
         public DateTime Date { get; set; }
-        public DebtType Type { get; set; } 
+        public DebtType Type { get; set; }
+
+        public decimal AmountNPR { get; set; }
+        public decimal PaidAmountNPR { get; set; }
     }
 }

@@ -2,23 +2,23 @@
 {
     private readonly Dictionary<string, decimal> _conversionRates = new()
     {
-        { "USD", 1.0m },
-        { "NPR", 120.0m }
+        { "USD", 0.0072m }, // 1 NPR = 0.0072 USD
+        { "NPR", 1m }       // NPR is the default base currency
     };
 
     private readonly Dictionary<string, string> _currencySymbols = new()
     {
-        { "USD", "$" },
-        { "NPR", "₨" }
+        { "NPR", "₨" },
+        { "USD", "$" }
     };
 
-    public string SelectedCurrency { get; private set; } = "USD"; // Default currency
+    // Default currency set to NPR
+    public string SelectedCurrency { get; private set; } = "NPR";
     public string SelectedCurrencySymbol => _currencySymbols.ContainsKey(SelectedCurrency)
         ? _currencySymbols[SelectedCurrency]
         : string.Empty;
 
-    public decimal ConversionRateToUSD => _conversionRates[SelectedCurrency];
-
+    // Conversion logic
     public decimal GetConversionRate(string currency)
     {
         return _conversionRates.ContainsKey(currency) ? _conversionRates[currency] : 1.0m;

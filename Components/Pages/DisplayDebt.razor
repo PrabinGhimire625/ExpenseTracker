@@ -30,9 +30,9 @@
                 {
                     <tr style="color: white;">
                         <td>@debt.Type.ToString()</td>
-                        <td>@debt.Amount.ToString("C")</td>
-                        <td>@debt.PaidAmount.ToString("C")</td>
-                        <td>@debt.RemainigAmount.ToString("C")</td> <!-- Display Remaining Amount -->
+                        <td>@debt.Amount</td>
+                        <td>@debt.PaidAmount</td>
+                        <td>@debt.RemainigAmount</td> <!-- Display Remaining Amount -->
                         <td>@debt.Source</td>
                         <td>@debt.DueDate.ToString("yyyy-MM-dd")</td>
                         <td>@(debt.IsCleared ? "Yes" : "No")</td> <!-- Display IsCleared status -->

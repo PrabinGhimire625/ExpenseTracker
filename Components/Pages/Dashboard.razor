@@ -1,17 +1,17 @@
 ﻿@page "/dashboard"
+@using System.Text
 @using ExpenseTracker.Models
 @inject NavigationManager NavigationManager
 @inject TransactionService TransactionService
 @inject DebtService DebtService
 @inject IJSRuntime JSRuntime
 @using OfficeOpenXml
-@inject ExcelExportService ExcelExportService
+@inject FileDownloadService FileDownloadService
 @inject CurrencyService CurrencyService
 
 <div class="main-content container py-4" style="color: white;">
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h1 style="font-weight: bold;">Dashboard</h1>
-        @* <button class="btn btn-primary" @onclick="DownloadTransactions">Download Transaction</button> *@
         <div class="d-flex align-items-center">
             <select class="form-select" style="font-weight: 300;" name="RegisterCurrency" @onchange="OnCurrencyChange">
                 <option value="" disabled selected>Select currency</option>
@@ -56,10 +56,10 @@
                 <div class="card-body p-3">
                     <h5 class="card-title text-danger">Transaction overview</h5>
                     <p class="card-text">
-                        <strong>No of transaction:</strong> @CurrencyService.SelectedCurrencySymbol @TotalTransactions
+                        <strong>No of transaction:</strong> @TotalTransactions
                     </p>
                     <p class="card-text">
-                        <strong>Total-transaction:</strong>@CurrencyService.SelectedCurrencySymbol @TotalTransactionsCalculated
+                        <strong>Total-transaction:</strong>@CurrencyService.SelectedCurrencySymbol @TotalTransactionsCalculatedAmount
                     </p>
                 </div>
             </div>
@@ -69,20 +69,21 @@
                 <div class="card-body p-4">
                     <h5 class="card-title text-warning">Inflow/Outflow Overview</h5>
                     <p class="card-text">
-                        <strong>Highest Inflow:</strong>@CurrencyService.SelectedCurrencySymbol @HighestInflow?.Amount
+                        <strong>Highest Inflow:</strong> @CurrencyService.SelectedCurrencySymbol @HighestInflowAmount
                     </p>
                     <p class="card-text">
-                        <strong>Lowest Inflow:</strong>@CurrencyService.SelectedCurrencySymbol @LowestInflow?.Amount
+                        <strong>Lowest Inflow:</strong> @CurrencyService.SelectedCurrencySymbol @LowestInflowAmount
                     </p>
                     <p class="card-text">
-                        <strong>Highest Outflow:</strong>@CurrencyService.SelectedCurrencySymbol @HighestOutflow?.Amount
+                        <strong>Highest Outflow:</strong> @CurrencyService.SelectedCurrencySymbol @HighestOutflowAmount
                     </p>
                     <p class="card-text">
-                        <strong>Lowest Outflow:</strong>@CurrencyService.SelectedCurrencySymbol @LowestOutflow?.Amount
+                        <strong>Lowest Outflow:</strong> @CurrencyService.SelectedCurrencySymbol @LowestOutflowAmount
                     </p>
                 </div>
             </div>
         </div>
+
 
         <div class="col-md-3 mb-2">
             <div class="card text-center bg-dark text-white shadow-sm">
@@ -98,10 +99,10 @@
                         <strong>Remaining Debts:</strong> @CurrencyService.SelectedCurrencySymbol @RemainingDebt
                     </p>
                     <p class="card-text">
-                        <strong>Highest Debts:</strong>@CurrencyService.SelectedCurrencySymbol @HighestDebt?.Amount
+                        <strong>Highest Debts:</strong>@CurrencyService.SelectedCurrencySymbol @HighestDebtAmount
                     </p>
                     <p class="card-text">
-                        <strong>Lowest Debts:</strong>@CurrencyService.SelectedCurrencySymbol @LowestOutflow?.Amount
+                        <strong>Lowest Debts:</strong>@CurrencyService.SelectedCurrencySymbol @LowestDebtAmount
                     </p>
                 </div>
             </div>
@@ -215,14 +216,15 @@
     </div>
 
     <!-- Transactions Section -->
-    <div class=" p-2" style="background-color: black;">
-        <div class="d-flex justify-content-between align-items-center mb-3 ">
-
+    <!-- Transactions Section -->
+    <div class="row p-2 mb-3" style="background-color: black;">
+        <div class="d-flex justify-content-between align-items-center mb-3">
             <!-- Date Filter Section (Left Side) -->
             <div class="d-flex mt-4">
                 <input type="date" @bind="StartDate" class="form-control d-inline-block w-auto me-2" />
                 <input type="date" @bind="EndDate" class="form-control d-inline-block w-auto me-2" />
                 <button class="btn btn-primary" @onclick="FilterByDateRange">Filter</button>
+                <button class="btn btn-primary ml-3" @onclick="DownloadTransactions">Download Transaction</button>
             </div>
 
             <!-- Sort Button Section (Right Side) -->
@@ -265,6 +267,14 @@
             </tbody>
         </table>
     </div>
+
+    @if (!string.IsNullOrEmpty(downloadMessage))
+    {
+        <div class="alert alert-info mt-3" role="alert">
+            @downloadMessage
+        </div>
+    }
+
 </div>
 @code {
     private decimal TotalIncome = 0;
@@ -287,21 +297,40 @@
     private TransactionModel HighestOutflow;
     private TransactionModel LowestOutflow;
 
+    private decimal HighestInflowAmount = 0;
+    private decimal LowestInflowAmount = 0;
+    private decimal HighestOutflowAmount = 0;
+    private decimal LowestOutflowAmount = 0;
+
     private DebtModel HighestDebt;
     private DebtModel LowestDebt;
 
+    private decimal HighestDebtAmount = 0;
+    private decimal LowestDebtAmount = 0;
+
     private List<DebtModel> PendingDebts = new();
-    private List<TransactionModel> Top5Transactions = new(); // Variable for Top 5 Transactions
+    private List<TransactionModel> Top5Transactions = new();
     private List<TransactionModel> Top5HighestTransactions = new();
     private List<TransactionModel> Top5LowestTransactions = new();
 
-    // Added USD values to be calculated and converted later
-    private decimal TotalIncomeUSD = 0;
-    private decimal TotalExpensesUSD = 0;
-    private decimal TotalNetWorthUSD = 0;
-    private decimal TotalDebtUSD = 0;
-    private decimal ClearedDebtUSD = 0;
-    private decimal RemainingDebtUSD = 0;
+    // Added NPR values (default currency)
+    private decimal TotalIncomeNPR = 0;
+    private decimal TotalExpensesNPR = 0;
+    private decimal TotalNetWorthNPR = 0;
+    private decimal TotalDebtNPR = 0;
+    private decimal ClearedDebtNPR = 0;
+    private decimal RemainingDebtNPR = 0;
+    private decimal HighestInflowNPR = 0;
+    private decimal LowestInflowNPR = 0;
+    private decimal HighestOutflowNPR = 0;
+    private decimal LowestOutflowNPR = 0;
+    private decimal HighestDebtNPR = 0;
+    private decimal LowestDebtNPR = 0;
+    private decimal TotalTransactionsCalculatedNPR = 0;
+
+    private decimal TotalTransactionsCalculatedAmount = 0;
+
+    private string downloadMessage = string.Empty;
 
     protected override async Task OnInitializedAsync()
     {
@@ -317,10 +346,10 @@
 
             var id = int.Parse(userId);
 
-            // Store values in USD first
-            TotalIncomeUSD = TransactionService.CalculateTotalIncome(id);
-            TotalExpensesUSD = TransactionService.CalculateTotalExpenses(id);
-            TotalNetWorthUSD = TotalIncomeUSD - TotalExpensesUSD;
+            // Store all values in NPR by default
+            TotalIncomeNPR = TransactionService.CalculateTotalIncome(id);
+            TotalExpensesNPR = TransactionService.CalculateTotalExpenses(id);
+            TotalNetWorthNPR = TotalIncomeNPR - TotalExpensesNPR;
 
             // Fetch transactions
             Transactions = TransactionService.GetUserTransactions(id);
@@ -333,25 +362,28 @@
             Top5LowestTransactions = await TransactionService.GetTop5LowestTransactions(id);
 
             // Calculate debt information
-            TotalDebtUSD = DebtService.CalculateTotalDebt(id);
-            ClearedDebtUSD = DebtService.CalculateClearedDebt(id);
-            RemainingDebtUSD = DebtService.CalculateRemainingDebt(id);
+            TotalDebtNPR = DebtService.CalculateTotalDebt(id);
+            ClearedDebtNPR = DebtService.CalculateClearedDebt(id);
+            RemainingDebtNPR = DebtService.CalculateRemainingDebt(id);
 
-            // Fetch highest and lowest transactions
-            HighestInflow = TransactionService.GetHighestIncome(id);
-            LowestInflow = TransactionService.GetLowestIncome(id);
-            HighestOutflow = TransactionService.GetHighestExpense(id);
-            LowestOutflow = TransactionService.GetLowestExpense(id);
+            // Fetch highest and lowest transactions in NPR
+            HighestInflowNPR = TransactionService.GetHighestIncome(id)?.Amount ?? 0;
+            LowestInflowNPR = TransactionService.GetLowestIncome(id)?.Amount ?? 0;
+            HighestOutflowNPR = TransactionService.GetHighestExpense(id)?.Amount ?? 0;
+            LowestOutflowNPR = TransactionService.GetLowestExpense(id)?.Amount ?? 0;
 
             // Fetch highest and lowest debts
             HighestDebt = DebtService.GetHighestDebt(id);
             LowestDebt = DebtService.GetLowestDebt(id);
 
+            HighestDebtNPR = HighestDebt?.Amount ?? 0;
+            LowestDebtNPR = LowestDebt?.Amount ?? 0;
+
             // Fetch pending debts
             PendingDebts = DebtService.GetPendingDebts(id);
 
             // Calculate total transactions based on inflows, debts, and outflows
-            TotalTransactionsCalculated = TotalIncomeUSD + TotalDebtUSD - TotalExpensesUSD;
+            TotalTransactionsCalculatedNPR = TotalIncomeNPR + TotalDebtNPR - TotalExpensesNPR;
 
             // Recalculate the displayed financials with the selected currency
             UpdateFinancialData();
@@ -383,29 +415,62 @@
         }
     }
 
-    // Method to handle currency change
     private void OnCurrencyChange(ChangeEventArgs e)
     {
         CurrencyService.SetCurrency(e.Value.ToString());
         UpdateFinancialData();
     }
 
-    // Method to update financial data
     private void UpdateFinancialData()
     {
-        // Convert the USD amounts to the selected currency
-        TotalIncome = TotalIncomeUSD * CurrencyService.GetConversionRate(CurrencyService.SelectedCurrency);
-        TotalExpenses = TotalExpensesUSD * CurrencyService.GetConversionRate(CurrencyService.SelectedCurrency);
-        TotalNetWorth = TotalNetWorthUSD * CurrencyService.GetConversionRate(CurrencyService.SelectedCurrency);
-        TotalDebt = TotalDebtUSD * CurrencyService.GetConversionRate(CurrencyService.SelectedCurrency);
-        ClearedDebt = ClearedDebtUSD * CurrencyService.GetConversionRate(CurrencyService.SelectedCurrency);
-        RemainingDebt = RemainingDebtUSD * CurrencyService.GetConversionRate(CurrencyService.SelectedCurrency);
+        // Convert NPR amounts to the selected currency and round to 1 decimal place
+        var conversionRate = CurrencyService.GetConversionRate(CurrencyService.SelectedCurrency);
+
+        TotalIncome = Math.Round(TotalIncomeNPR * conversionRate, 1);
+        TotalExpenses = Math.Round(TotalExpensesNPR * conversionRate, 1);
+        TotalNetWorth = Math.Round(TotalNetWorthNPR * conversionRate, 1);
+        TotalDebt = Math.Round(TotalDebtNPR * conversionRate, 1);
+        ClearedDebt = Math.Round(ClearedDebtNPR * conversionRate, 1);
+        RemainingDebt = Math.Round(RemainingDebtNPR * conversionRate, 1);
+
+        HighestInflowAmount = Math.Round(HighestInflowNPR * conversionRate, 1);
+        LowestInflowAmount = Math.Round(LowestInflowNPR * conversionRate, 1);
+        HighestOutflowAmount = Math.Round(HighestOutflowNPR * conversionRate, 1);
+        LowestOutflowAmount = Math.Round(LowestOutflowNPR * conversionRate, 1);
+
+        HighestDebtAmount = Math.Round(HighestDebtNPR * conversionRate, 1);
+        LowestDebtAmount = Math.Round(LowestDebtNPR * conversionRate, 1);
+
+        TotalTransactionsCalculatedAmount = Math.Round(TotalTransactionsCalculatedNPR * conversionRate, 1);
     }
 
-    // private async Task DownloadTransactions()
-    // {
-    //     var file = await ExcelExportService.ExportTransactionsToExcel(FilteredTransactions);
-    //     var fileName = "transactions.xlsx";
-    //     await JSRuntime.InvokeVoidAsync("saveAsFile", fileName, file);
-    // }
+    private async Task DownloadTransactions()
+    {
+        try
+        {
+            // Filter transactions by the selected date range
+            var filteredTransactions = Transactions.Where(t =>
+                (!StartDate.HasValue || t.Date >= StartDate.Value) &&
+                (!EndDate.HasValue || t.Date <= EndDate.Value)).ToList();
+
+            // Generate file content
+            var fileBytes = FileDownloadService.GenerateTransactionFile(filteredTransactions);
+
+            // Convert to Base64 for JavaScript download
+            var base64File = Convert.ToBase64String(fileBytes);
+            var fileName = "Transactions.txt";
+
+            // Trigger the download via JSInterop
+            await JSRuntime.InvokeVoidAsync("saveAsFile", fileName, base64File);
+
+            // Update message on successful download
+            downloadMessage = "Transactions downloaded successfully!";
+        }
+        catch (Exception ex)
+        {
+            // Update message on failure
+            downloadMessage = $"Error during download: {ex.Message}";
+        }
+    }
+
 }
