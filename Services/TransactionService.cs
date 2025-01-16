@@ -7,7 +7,7 @@ public class TransactionService
     private static readonly string FolderPath = Path.Combine(DesktopPath, "JsonData");
     private static readonly string FilePath = Path.Combine(FolderPath, "AppData.json"); 
 
-    // Load all data (users, debts, transactions) from the JSON file
+    // Load all data from the JSON file
     public AppData LoadAppData()
     {
         if (!File.Exists(FilePath))
@@ -17,7 +17,7 @@ public class TransactionService
         return JsonSerializer.Deserialize<AppData>(json) ?? new AppData(); 
     }
 
-    // Save all data (users, debts, transactions) to the JSON file
+    // Save all data to the JSON file
     public void SaveAppData(AppData appData)
     {
         if (!Directory.Exists(FolderPath))
@@ -37,7 +37,7 @@ public class TransactionService
         SaveAppData(appData);  
     }
 
-    // Get all income transactions for a user
+    // Get all income transactions f
     public List<TransactionModel> GetAllIncomeTransactions(int userId)
     {
         var transactions = LoadAppData().Transactions;
@@ -47,7 +47,7 @@ public class TransactionService
         return incomeTransactions;
     }
 
-    // Calculate total income for a user
+    // Calculate total income 
     public decimal CalculateTotalIncome(int userId)
     {
         var transactions = LoadAppData().Transactions;
@@ -55,10 +55,22 @@ public class TransactionService
             .Where(t => t.UserId == userId && t.Type == TransactionModel.TransactionType.Credit)
             .ToList();
 
-        return incomeTransactions.Sum(t => t.Amount);
+        decimal totalIncome = incomeTransactions.Sum(t => t.Amount);
+        var debts = LoadAppData().Debts
+            .Where(d => d.UserId == userId && d.Type == DebtType.Give)
+            .ToList();
+
+        decimal totalClearedDebt = debts
+            .Where(d => d.IsCleared)
+            .Sum(d => d.PaidAmount);
+
+        totalIncome -= totalClearedDebt;
+
+        return totalIncome;
     }
 
-    // Calculate total expenses for a user
+
+    // Calculate total expenses 
     public decimal CalculateTotalExpenses(int userId)
     {
         var transactions = LoadAppData().Transactions;
@@ -69,7 +81,7 @@ public class TransactionService
         return expenseTransactions.Sum(t => t.Amount);
     }
 
-     // Save transactions for a specific user
+     // Save transactions 
     public void SaveUserTransactions(int userId, List<TransactionModel> transactions)
     {
         var appData = LoadAppData();
@@ -79,14 +91,14 @@ public class TransactionService
         SaveAppData(appData);
     }
 
-    // Get transactions for a specific user
+    // Get transactions 
     public List<TransactionModel> GetUserTransactions(int userId)
     {
         var appData = LoadAppData();
         return appData.Transactions.Where(t => t.UserId == userId).ToList();
     }
 
-
+    //check the balance for the cash outflow
     public bool CheckSufficientBalance(int userId, decimal transactionAmount)
     {
         decimal totalIncome = CalculateTotalIncome(userId); 
@@ -97,6 +109,7 @@ public class TransactionService
         return balance >= transactionAmount; 
     }
 
+    //filter transaction
     public List<TransactionModel> FilterTransactions(int userId, string? type = null, List<string>? tags = null, DateTime? date = null)
     {
         var transactions = LoadAppData().Transactions
@@ -122,7 +135,8 @@ public class TransactionService
 
         return transactions.ToList();
     }
-
+    
+    //sort transaction by date
     public List<TransactionModel> SortTransactionsByDate(List<TransactionModel> transactions, bool ascending = true)
     {
         if (ascending)
@@ -135,6 +149,7 @@ public class TransactionService
         }
     }
 
+    //search by title
     public List<TransactionModel> SearchByTitle(int userId, string title)
     {
         return LoadAppData().Transactions
@@ -144,6 +159,7 @@ public class TransactionService
             .ToList();
     }
 
+    //get transaction by start date and end date
     public List<TransactionModel> GetTransactionsByDateRange(int userId, DateTime startDate, DateTime endDate)
     {
         return LoadAppData().Transactions
@@ -151,7 +167,7 @@ public class TransactionService
             .ToList();
     }
 
-    // Get highest income for a user
+    // Get highest income
     public TransactionModel GetHighestIncome(int userId)
     {
         return LoadAppData().Transactions
@@ -160,7 +176,7 @@ public class TransactionService
             .FirstOrDefault();
     }
 
-    // Get lowest income for a user
+    // Get lowest income 
     public TransactionModel GetLowestIncome(int userId)
     {
         return LoadAppData().Transactions
@@ -169,7 +185,7 @@ public class TransactionService
             .FirstOrDefault();
     }
 
-    // Get highest expense for a user
+    // Get highest expense
     public TransactionModel GetHighestExpense(int userId)
     {
         return LoadAppData().Transactions
@@ -178,7 +194,7 @@ public class TransactionService
             .FirstOrDefault();
     }
 
-    // Get lowest expense for a user
+    // Get lowest expense 
     public TransactionModel GetLowestExpense(int userId)
     {
         return LoadAppData().Transactions
@@ -187,6 +203,7 @@ public class TransactionService
             .FirstOrDefault();
     }
 
+    //total no of transaction
     public int CalculateTotalNumberOfTransactions(int userId)
     {
         var transactions = LoadAppData().Transactions;
@@ -196,7 +213,7 @@ public class TransactionService
         return totalTransactions; 
     }
 
-    // Get top 5 highest transactions for a user
+    // top 5 highest transactions 
     public async Task<List<TransactionModel>> GetTop5HighestTransactions(int userId)
     {
         if (userId <= 0)
@@ -212,6 +229,7 @@ public class TransactionService
         return await Task.FromResult(transactions);
     }
 
+    //top 5 lowest transaction
     public async Task<List<TransactionModel>> GetTop5LowestTransactions(int userId)
     {
         if (userId <= 0)

@@ -16,7 +16,7 @@ using System.Text.Json;
         private static readonly string FolderPath = Path.Combine(DesktopPath, "JsonData");
         private static readonly string FilePath = Path.Combine(FolderPath, "AppData.json");
 
-        // Load all data (users, debts, transactions) from the JSON file
+        // Load all data  from the JSON file
         public AppData LoadAppData()
         {
             if (!File.Exists(FilePath))
@@ -25,7 +25,7 @@ using System.Text.Json;
             return JsonSerializer.Deserialize<AppData>(json) ?? new AppData();
         }
 
-        // Save all data (users, debts, transactions) to the JSON file
+        // Save all data to the JSON file
         public void SaveAppData(AppData appData)
         {
             if (!Directory.Exists(FolderPath))
@@ -45,7 +45,7 @@ using System.Text.Json;
             SaveAppData(appData);
         }
 
-        // Get all debts for a specific user
+        // Get all debts 
         public List<DebtModel> GetAllUserDebts(int userId)
         {
             var debts = LoadAppData().Debts;
@@ -59,56 +59,56 @@ using System.Text.Json;
         }
 
 
-        // Calculate the total cleared debt for a specific user
+        // total cleared debt 
         public decimal CalculateClearedDebt(int userId)
         {
             var debts = LoadAppData().Debts.Where(d => d.UserId == userId && d.Type == DebtType.Give).ToList();
             return debts.Where(d => d.IsCleared).Sum(d => d.PaidAmount);
         }
 
+        //remaining debt
         public decimal CalculateRemainingDebt(int userId)
         {
             var debts = LoadAppData().Debts.Where(d => d.UserId == userId && d.Type == DebtType.Give).ToList();
             return debts.Sum(d => d.RemainigAmount);
         }
 
-        // Calculate Total Debt for a specific user
+        // Calculate Total Debt 
         public decimal CalculateTotalDebt(int userId)
         {
             var debts = GetAllUserDebts(userId);
             return debts.Sum(d => d.RemainigAmount);
         }
 
-        // Get the lowest debt for a specific user
+        // Get the lowest debt 
         public DebtModel GetLowestDebt(int userId)
         {
             var debts = GetAllUserDebts(userId);
             return debts.OrderBy(d => d.RemainigAmount).FirstOrDefault();
         }
 
-        // Get the highest debt for a specific user
+        // Get the highest debt 
         public DebtModel GetHighestDebt(int userId)
         {
             var debts = GetAllUserDebts(userId);
             return debts.OrderByDescending(d => d.RemainigAmount).FirstOrDefault();
         }
 
-        // Get the lowest debt overall 
+        // Get the lowest debt 
         public DebtModel GetLowestDebtOverall()
         {
             var debts = GetAllDebts();
             return debts.OrderBy(d => d.RemainigAmount).FirstOrDefault();
         }
 
-        // Get the highest debt overall
+        // Get the highest debt 
         public DebtModel GetHighestDebtOverall()
         {
             var debts = GetAllDebts();
             return debts.OrderByDescending(d => d.RemainigAmount).FirstOrDefault();
         }
 
-
-        // In DebtService
+        // pending debts
         public List<DebtModel> GetPendingDebts(int userId)
         {
             var debts = LoadAppData().Debts

@@ -125,7 +125,7 @@
         }
 
         // Combine predefined tags with custom tags
-        var allTags = TransactionTags.Split(',').ToList(); // Predefined tags
+        var allTags = TransactionTags.Split(',').ToList(); 
         if (!string.IsNullOrEmpty(CustomTags))
         {
             allTags.AddRange(CustomTags.Split(',').Select(tag => tag.Trim()));
@@ -137,12 +137,12 @@
         // Save the transaction
         var newTransaction = new TransactionModel
             {
-                Id = newTransactionId,  // Assign the unique TransactionId
+                Id = newTransactionId,  
                 UserId = parsedUserId,
                 Title = TransactionTitle,
                 Amount = TransactionAmount,
                 Type = Enum.TryParse<TransactionModel.TransactionType>(TransactionType, out var type) ? type : TransactionModel.TransactionType.Credit,
-                Tags = allTags.Distinct().ToList(), // Combine both, remove duplicates
+                Tags = allTags.Distinct().ToList(), 
                 Source = TransactionSource.Split(',').ToList(),
                 Notes = TransactionNotes,
                 Date = DateTime.Now

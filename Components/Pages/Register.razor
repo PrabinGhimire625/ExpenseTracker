@@ -51,7 +51,7 @@
 </section>
 
 @code {
-    private string RegisterUsername = ""; // New field for username
+    private string RegisterUsername = ""; 
     private string RegisterEmail = "";
     private string RegisterPassword = "";
     private string RegisterCurrency = "";
@@ -78,7 +78,7 @@
         }
 
         // Generate a unique ID for the new user
-        var newUserId = Users.Any() ? Users.Max(u => u.Id) + 1 : 1;  // If there are users, take the max ID and increment by 1, else start from 1.
+        var newUserId = Users.Any() ? Users.Max(u => u.Id) + 1 : 1;  
 
         var newUser = new User
             {

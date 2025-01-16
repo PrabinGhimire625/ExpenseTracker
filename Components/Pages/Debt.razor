@@ -6,7 +6,6 @@
 
 <section class="">
     <div class="d-flex justify-content-center align-items-center min-vh-100">
-        <!-- Debt Form -->
         <div class="card shadow-sm border-0 p-3 " style="width: 400px; background-color: #fef9f9; border-radius: 16px;">
             <!-- Debt Form Header -->
             <div class="mb-4">
@@ -16,7 +15,6 @@
             </div>
             <h2 class="text-center mb-4" style="color: #5f2eea;">Debt</h2>
 
-            <!-- Debt Form -->
             <form @onsubmit="OnSaveDebt">
                 <!-- Amount Input -->
                 <div class="mb-3">
@@ -92,7 +90,7 @@
     private DateTime DueDate = DateTime.Now;
     private string DebtSource = "";
     private string DebtNotes = "";
-    private string DebtType = "Take";  // Default to "Take"
+    private string DebtType = "Take";  
     private string Message = "";
 
     private List<DebtModel> Debts = new();
@@ -113,13 +111,13 @@
             return;
         }
 
-        // Generate a unique Debt ID (Same logic as transaction ID)
+        // Generate a unique debtId
         var newDebtId = Debts.Any() ? Debts.Max(d => d.Id) + 1 : 1;
 
         // Save the debt only if the form is valid
         if (DebtAmount <= 0 || string.IsNullOrWhiteSpace(DebtSource))
         {
-            Message = "Amount and Tags are required.";
+            Message = "Amount and source are required.";
             return;
         }
 
@@ -134,27 +132,27 @@
         // Create a new DebtModel
         var newDebt = new DebtModel
             {
-                Id = newDebtId, // Assign the new unique Debt ID
-                UserId = int.Parse(userId), // Associate the debt with the user
+                Id = newDebtId, 
+                UserId = int.Parse(userId), 
                 Amount = DebtAmount,
                 PaidAmount = PaidAmount,
                 DueDate = DueDate,
                 Source = DebtSource,
                 Notes = DebtNotes,
-                Type = debtType, // Use DebtType enum value
+                Type = debtType, 
                 Date = DateTime.Now
             };
 
-        // Save the new debt using DebtService
-        Debts.Add(newDebt); // Add the new debt to the local list
-        DebtService.SaveDebts(Debts); // Save the updated list of debts
+        // Save the new debt 
+        Debts.Add(newDebt); 
+        DebtService.SaveDebts(Debts); 
 
         Message = "Debt saved successfully!";
     }
 
     private void OnCancel()
     {
-        // Navigate to the home page or reset the form as needed
+        // Navigate to the home page
         NavigationManager.NavigateTo("/home");
     }
 }

@@ -4,11 +4,10 @@ using ExpenseTracker.Models;
 
 public class FileDownloadService
 {
-    // Method to generate a nicely formatted text file content from a list of transactions
     public byte[] GenerateTransactionFile(List<TransactionModel> transactions)
     {
         var content = new StringBuilder();
-        string separator = new string('-', 87); // Adjust separator length for column widths
+        string separator = new string('-', 87); 
         string header = string.Format("{0,-40} | {1,-10} | {2,-12} | {3,-12}",
                                       "Title", "Type", "Amount", "Date");
 
@@ -27,7 +26,6 @@ public class FileDownloadService
                                              transaction.Date.ToShortDateString()));
         }
 
-        // Add closing separator
         content.AppendLine(separator);
 
         return Encoding.UTF8.GetBytes(content.ToString());

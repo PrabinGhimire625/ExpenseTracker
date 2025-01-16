@@ -20,7 +20,7 @@ public class UserService
         return JsonSerializer.Deserialize<AppData>(json) ?? new AppData();  
     }
 
-    // Save AppData (users, debts, transactions) to JSON
+    // Save AppData to JSON
     public void SaveData(AppData appData)
     {
         if (!Directory.Exists(FolderPath))
@@ -41,7 +41,7 @@ public class UserService
         return Convert.ToBase64String(hash); 
     }
 
-    // Validate password by comparing the hashed version
+    // Validate password by comparing the hashed password
     public bool ValidatePassword(string inputPassword, string storedPassword)
     {
         var hashedInputPassword = HashPassword(inputPassword);

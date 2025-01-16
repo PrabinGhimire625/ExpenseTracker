@@ -67,7 +67,7 @@
         // Save userId to local storage
         await JSRuntime.InvokeVoidAsync("localStorage.setItem", "userId", user.Id.ToString());
         Message = "Login successful Redirecting to dashboard";
-        StateHasChanged();  // Immediately refresh the UI to show the success message
+        StateHasChanged();  
 
         // Delay for 10 seconds before redirecting
         await Task.Delay(2000);

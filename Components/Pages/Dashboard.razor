@@ -110,7 +110,7 @@
     </div>
 
     <!-- Pending Debts Section -->
-    <div class=" p-2 mb-3" style="background-color: black;">
+    <div class="p-2 mb-3" style="background-color: black;">
         <h3 class="text-white font-weight-bold" style="font-size: 2rem;">Pending Debts</h3>
         <table class="table table-dark table-hover">
             <thead>
@@ -130,9 +130,9 @@
                         <tr>
                             <td>@debt.Source</td>
                             <td>@debt.Type</td>
-                            <td>@debt.Amount</td>
-                            <td>@debt.RemainigAmount</td>
-                            <td>@debt.DueDate</td>
+                            <td>@CurrencyService.SelectedCurrencySymbol @Math.Round(debt.Amount * CurrencyService.GetConversionRate(CurrencyService.SelectedCurrency), 1)</td>
+                            <td>@CurrencyService.SelectedCurrencySymbol @Math.Round(debt.RemainigAmount * CurrencyService.GetConversionRate(CurrencyService.SelectedCurrency), 1)</td>
+                            <td>@debt.DueDate.ToShortDateString()</td>
                         </tr>
                     }
                 }
@@ -216,7 +216,6 @@
     </div>
 
     <!-- Transactions Section -->
-    <!-- Transactions Section -->
     <div class="row p-2 mb-3" style="background-color: black;">
         <div class="d-flex justify-content-between align-items-center mb-3">
             <!-- Date Filter Section (Left Side) -->
@@ -276,6 +275,7 @@
     }
 
 </div>
+
 @code {
     private decimal TotalIncome = 0;
     private decimal TotalExpenses = 0;
@@ -472,5 +472,4 @@
             downloadMessage = $"Error during download: {ex.Message}";
         }
     }
-
 }
