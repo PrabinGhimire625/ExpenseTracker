@@ -20,16 +20,16 @@
                 </div>
 
                 <div class="mb-3">
-                    <input type="email" class="form-control" placeholder="email" style="font-weight: 300;" @bind="RegisterEmail" required>
+                    <input type="email" class="form-control" placeholder="Email" style="font-weight: 300;" @bind="RegisterEmail" required>
                 </div>
 
                 <div class="mb-3">
-                    <input type="password" class="form-control" placeholder="password" style="font-weight: 300;" @bind="RegisterPassword" required>
+                    <input type="password" class="form-control" placeholder="Password" style="font-weight: 300;" @bind="RegisterPassword" required>
                 </div>
 
                 <div class="mb-4">
                     <select class="form-select" style="font-weight: 300;" @bind="RegisterCurrency" required>
-                        <option value="" disabled selected>currency</option>    
+                        <option value="" disabled selected>Currency</option>    
                         <option value="NPR">NPR</option>
                         <option value="USD">USD</option>
                     </select>
@@ -40,7 +40,7 @@
 
             @if (!string.IsNullOrEmpty(Message))
             {
-                    <p class="text-center @(Message == "Registration successful" ? "text-success" : "text-muted")">@Message</p>
+                        <p class="text-center @(Message == "Registration successful" ? "text-success" : "text-muted")">@Message</p>
             }
 
             <div class="text-center mt-2">
@@ -51,7 +51,7 @@
 </section>
 
 @code {
-    private string RegisterUsername = ""; 
+    private string RegisterUsername = "";
     private string RegisterEmail = "";
     private string RegisterPassword = "";
     private string RegisterCurrency = "";
@@ -77,8 +77,14 @@
             return;
         }
 
+        if (Users.Any(u => u.Username == RegisterUsername))
+        {
+            Message = "Username already exists.";
+            return;
+        }
+
         // Generate a unique ID for the new user
-        var newUserId = Users.Any() ? Users.Max(u => u.Id) + 1 : 1;  
+        var newUserId = Users.Any() ? Users.Max(u => u.Id) + 1 : 1;
 
         var newUser = new User
             {

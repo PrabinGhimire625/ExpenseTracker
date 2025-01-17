@@ -450,7 +450,7 @@
         {
             // Filter transactions by the selected date range
             var filteredTransactions = Transactions.Where(t =>
-                (!StartDate.HasValue || t.Date >= StartDate.Value) &&
+                (!StartDate.HasValue || t.Date >= StartDate.Value) && 
                 (!EndDate.HasValue || t.Date <= EndDate.Value)).ToList();
 
             // Generate file content

@@ -17,11 +17,11 @@
 
             <form @onsubmit="OnLogin">
                 <div class="mb-3">
-                    <input type="email" class="form-control text-muted" placeholder="email" style="font-weight: 300;" @bind="LoginEmail" required>
+                    <input type="text" class="form-control text-muted" placeholder="Username" style="font-weight: 300;" @bind="LoginUsername" required>
                 </div>
 
                 <div class="mb-3">
-                    <input type="password" class="form-control text-muted" placeholder="password" style="font-weight: 300;" @bind="LoginPassword" required>
+                    <input type="password" class="form-control text-muted" placeholder="Password" style="font-weight: 300;" @bind="LoginPassword" required>
                 </div>
 
                 <button type="submit" class="btn btn-primary w-100 py-2 mb-3">Login</button>
@@ -29,9 +29,9 @@
 
             @if (!string.IsNullOrEmpty(Message))
             {
-                <p class="text-center mt-3 fw-bold @(Message == "Invalid password." || Message == "Email not found." ? "text-danger" : "text-success")">
+                    <p class="text-center mt-3 fw-bold @(Message == "Invalid password." || Message == "Username not found." ? "text-danger" : "text-success")">
                     @Message
-                </p>
+                    </p>
             }
 
             <div class="text-center mt-2">
@@ -42,7 +42,7 @@
 </section>
 
 @code {
-    private string LoginEmail = "";
+    private string LoginUsername = "";
     private string LoginPassword = "";
     private string Message = "";
 
@@ -50,11 +50,11 @@
     {
         var users = UserService.LoadUsers();
 
-        var user = users.FirstOrDefault(u => u.Email == LoginEmail);
+        var user = users.FirstOrDefault(u => u.Username == LoginUsername);
 
         if (user == null)
         {
-            Message = "Email not found.";
+            Message = "Username not found.";
             return;
         }
 
@@ -66,10 +66,10 @@
 
         // Save userId to local storage
         await JSRuntime.InvokeVoidAsync("localStorage.setItem", "userId", user.Id.ToString());
-        Message = "Login successful Redirecting to dashboard";
-        StateHasChanged();  
+        Message = "Login successful. Redirecting to dashboard...";
+        StateHasChanged();
 
-        // Delay for 10 seconds before redirecting
+        // Delay for 2 seconds before redirecting
         await Task.Delay(2000);
 
         // Navigate to the dashboard
